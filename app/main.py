@@ -12,16 +12,15 @@ from fastapi.staticfiles import StaticFiles
 
 from app.repository import SQLiteRepository
 
-scheduler = BackgroundScheduler()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.repository = SQLiteRepository("/data/db.sqlite")
     repository: SQLiteRepository = app.state.repository
     repository.initialize_schema()
-    if not scheduler.running:
-        scheduler.start()
+    scheduler = BackgroundScheduler()
+    app.state.scheduler = scheduler
+    scheduler.start()
     try:
         yield
     finally:
