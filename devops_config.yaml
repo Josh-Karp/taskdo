@@ -1,0 +1,12 @@
+# Odoo model used for development operations review records.
+# Replace this placeholder with the model name available in your Odoo instance.
+model: x_devops_review
+
+# Field mapping used to read review metadata from Odoo.
+# Each value should be set to the exact field technical name returned by fields_get().
+fields:
+  id: x_id
+  title: x_title
+  branch_name: x_branch_name
+  repo_url: x_repo_url
+  state: x_state
