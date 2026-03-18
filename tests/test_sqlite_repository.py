@@ -1,6 +1,3 @@
-import sqlite3
-
-
 def test_initialize_schema_creates_all_tables(sqlite_repository) -> None:
     sqlite_repository.initialize_schema()
 
