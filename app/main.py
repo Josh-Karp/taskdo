@@ -6,18 +6,19 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.repository import SQLiteRepository
 
 scheduler = BackgroundScheduler()
-repository = SQLiteRepository("/data/db.sqlite")
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(app: FastAPI):
+    app.state.repository = SQLiteRepository("/data/db.sqlite")
+    repository: SQLiteRepository = app.state.repository
     repository.initialize_schema()
     if not scheduler.running:
         scheduler.start()
@@ -32,8 +33,10 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="taskdo", lifespan=lifespan)
 
 
+@app.get("/health")
 @app.get("/healthz")
-def healthz() -> dict[str, str]:
+def health(request: Request) -> dict[str, str]:
+    repository: SQLiteRepository = request.app.state.repository
     repository.is_reachable()
     return {"status": "ok", "database": "reachable"}
 

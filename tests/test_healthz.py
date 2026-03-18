@@ -1,11 +1,13 @@
 from fastapi.testclient import TestClient
+import pytest
 
 from app.main import app
 
 
-def test_healthz_returns_database_status() -> None:
+@pytest.mark.parametrize("endpoint", ["/health", "/healthz"])
+def test_health_endpoints_return_database_status(endpoint: str) -> None:
     with TestClient(app) as client:
-        response = client.get('/healthz')
+        response = client.get(endpoint)
 
     assert response.status_code == 200
-    assert response.json() == {'status': 'ok', 'database': 'reachable'}
+    assert response.json() == {"status": "ok", "database": "reachable"}
