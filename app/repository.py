@@ -23,7 +23,9 @@ class SQLiteRepository:
                 fallback_dir.mkdir(parents=True, exist_ok=True)
                 db_file = fallback_dir / db_file.name
                 self.db_path = str(db_file)
-        return sqlite3.connect(self.db_path, check_same_thread=False)
+        connection = sqlite3.connect(self.db_path, check_same_thread=False)
+        connection.execute("PRAGMA foreign_keys = ON")
+        return connection
 
     def initialize_schema(self) -> None:
         statements = [

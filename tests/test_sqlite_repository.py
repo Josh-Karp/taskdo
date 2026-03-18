@@ -1,3 +1,8 @@
+import sqlite3
+
+import pytest
+
+
 def test_initialize_schema_creates_all_tables(sqlite_repository) -> None:
     sqlite_repository.initialize_schema()
 
@@ -31,3 +36,15 @@ def test_initialize_schema_is_idempotent(sqlite_repository) -> None:
     assert table_names.count("sync_log") == 1
     assert table_names.count("push_queue") == 1
     assert table_names.count("daily_summary") == 1
+
+
+def test_foreign_key_constraints_are_enforced(sqlite_repository) -> None:
+    sqlite_repository.initialize_schema()
+
+    with pytest.raises(sqlite3.IntegrityError):
+        sqlite_repository._connection.execute(
+            """
+            INSERT INTO push_queue (task_id, status, duplicate_candidate_odoo_id)
+            VALUES (999, 'pending', NULL)
+            """
+        )
