@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -11,23 +12,24 @@ from fastapi.staticfiles import StaticFiles
 
 from app.repository import SQLiteRepository
 
-app = FastAPI(title="taskdo")
 scheduler = BackgroundScheduler()
 repository = SQLiteRepository("/data/db.sqlite")
 
 
-@app.on_event("startup")
-def startup() -> None:
+@asynccontextmanager
+async def lifespan(_: FastAPI):
     repository.initialize_schema()
     if not scheduler.running:
         scheduler.start()
+    try:
+        yield
+    finally:
+        if scheduler.running:
+            scheduler.shutdown(wait=False)
+        repository.close()
 
 
-@app.on_event("shutdown")
-def shutdown() -> None:
-    if scheduler.running:
-        scheduler.shutdown(wait=False)
-    repository.close()
+app = FastAPI(title="taskdo", lifespan=lifespan)
 
 
 @app.get("/healthz")
