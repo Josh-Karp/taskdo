@@ -31,6 +31,20 @@ class OdooClientStub:
         return self.reviews
 
 
+def _task_record(task_id: int, project_id=1, stage_id="open", name: str | None = None) -> dict:
+    task_name = name or f"T{task_id}"
+    return {
+        "id": task_id,
+        "name": task_name,
+        "description": "",
+        "project_id": project_id,
+        "date_deadline": None,
+        "stage_id": stage_id,
+        "date_assign": None,
+        "date_last_stage_update": None,
+    }
+
+
 def _build_worker(repo: SQLiteRepository, client: OdooClientStub) -> OdooSyncWorker:
     config = DevopsConfig(
         model="devops.review",
@@ -69,11 +83,11 @@ def test_sync_populates_tasks(sqlite_repository) -> None:
     sqlite_repository.initialize_schema()
     client = OdooClientStub()
     client.tasks = [
-        {"id": 10, "name": "T1", "description": "", "project_id": [1, "P"], "date_deadline": None, "stage_id": [2, "In Progress"], "date_assign": None, "date_last_stage_update": None},
-        {"id": 11, "name": "T2", "description": "", "project_id": [1, "P"], "date_deadline": None, "stage_id": [2, "In Progress"], "date_assign": None, "date_last_stage_update": None},
-        {"id": 12, "name": "T3", "description": "", "project_id": [1, "P"], "date_deadline": None, "stage_id": [2, "In Progress"], "date_assign": None, "date_last_stage_update": None},
-        {"id": 13, "name": "T4", "description": "", "project_id": [1, "P"], "date_deadline": None, "stage_id": [2, "In Progress"], "date_assign": None, "date_last_stage_update": None},
-        {"id": 14, "name": "T5", "description": "", "project_id": [1, "P"], "date_deadline": None, "stage_id": [2, "In Progress"], "date_assign": None, "date_last_stage_update": None},
+        _task_record(10, project_id=[1, "P"], stage_id=[2, "In Progress"], name="T1"),
+        _task_record(11, project_id=[1, "P"], stage_id=[2, "In Progress"], name="T2"),
+        _task_record(12, project_id=[1, "P"], stage_id=[2, "In Progress"], name="T3"),
+        _task_record(13, project_id=[1, "P"], stage_id=[2, "In Progress"], name="T4"),
+        _task_record(14, project_id=[1, "P"], stage_id=[2, "In Progress"], name="T5"),
     ]
     worker = _build_worker(sqlite_repository, client)
 
@@ -89,15 +103,15 @@ def test_sync_marks_missing_tasks_cancelled(sqlite_repository) -> None:
     sqlite_repository.initialize_schema()
     sqlite_repository.upsert_tasks(
         [
-            {"id": 20, "name": "T20", "description": "", "project_id": 1, "date_deadline": None, "stage_id": "open", "date_assign": None},
-            {"id": 21, "name": "T21", "description": "", "project_id": 1, "date_deadline": None, "stage_id": "open", "date_assign": None},
-            {"id": 22, "name": "T22", "description": "", "project_id": 1, "date_deadline": None, "stage_id": "open", "date_assign": None},
+            _task_record(20, project_id=[1, "P"], stage_id=[1, "Open"], name="T20"),
+            _task_record(21, project_id=[1, "P"], stage_id=[1, "Open"], name="T21"),
+            _task_record(22, project_id=[1, "P"], stage_id=[1, "Open"], name="T22"),
         ]
     )
     client = OdooClientStub()
     client.tasks = [
-        {"id": 20, "name": "T20", "description": "", "project_id": 1, "date_deadline": None, "stage_id": "open", "date_assign": None, "date_last_stage_update": None},
-        {"id": 21, "name": "T21", "description": "", "project_id": 1, "date_deadline": None, "stage_id": "open", "date_assign": None, "date_last_stage_update": None},
+        _task_record(20, project_id=[1, "P"], stage_id=[1, "Open"], name="T20"),
+        _task_record(21, project_id=[1, "P"], stage_id=[1, "Open"], name="T21"),
     ]
     worker = _build_worker(sqlite_repository, client)
 
@@ -119,7 +133,7 @@ def test_sync_does_not_overwrite_confirmed_priority(sqlite_repository) -> None:
     )
     client = OdooClientStub()
     client.tasks = [
-        {"id": 30, "name": "Task updated", "description": "", "project_id": 1, "date_deadline": None, "stage_id": "open", "date_assign": None, "date_last_stage_update": None}
+        _task_record(30, project_id=[1, "P"], stage_id=[1, "Open"], name="Task updated")
     ]
     worker = _build_worker(sqlite_repository, client)
 
@@ -214,4 +228,3 @@ def test_duplicate_threshold_env_var(sqlite_repository, monkeypatch) -> None:
     worker = _build_worker(sqlite_repository, client)
 
     assert worker.duplicate_threshold == 92
-

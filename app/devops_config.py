@@ -57,10 +57,17 @@ class DevopsConfigLoader:
         except OdooConnectionError as exc:
             raise DevopsConfigError(f"Unable to validate model '{model}': {exc}") from exc
 
+        field_names_to_validate = [odoo_field for odoo_field in fields.values() if odoo_field]
+        field_names_to_validate.extend(
+            [
+                filters.get("assigned_user_field"),
+                filters.get("status_field"),
+            ]
+        )
         missing = sorted(
-            odoo_field
-            for odoo_field in fields.values()
-            if odoo_field and odoo_field not in metadata
+            field_name
+            for field_name in field_names_to_validate
+            if field_name and field_name not in metadata
         )
         if missing:
             missing_list = ", ".join(missing)

@@ -210,14 +210,12 @@ class SQLiteRepository:
                 )
                 return
             placeholders = ",".join("?" for _ in odoo_ids_not_in)
-            self._connection.execute(
-                f"""
-                UPDATE tasks
-                SET state = 'cancelled'
-                WHERE origin = 'odoo' AND odoo_id NOT IN ({placeholders})
-                """,
-                tuple(odoo_ids_not_in),
+            query = (
+                "UPDATE tasks "
+                "SET state = 'cancelled' "
+                "WHERE origin = 'odoo' AND odoo_id NOT IN (" + placeholders + ")"
             )
+            self._connection.execute(query, tuple(odoo_ids_not_in))
 
     def upsert_reviews(self, records: list[dict]) -> None:
         with self._connection:
