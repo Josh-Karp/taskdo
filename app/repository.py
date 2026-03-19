@@ -62,7 +62,9 @@ class SQLiteRepository:
                 repo_url TEXT,
                 state TEXT,
                 review_result TEXT,
-                review_status TEXT NOT NULL CHECK (review_status IN ('pending', 'complete', 'failed')),
+                review_status TEXT NOT NULL CHECK (
+                    review_status IN ('pending', 'complete', 'failed')
+                ),
                 reviewed_at TEXT
             )
             """,
@@ -77,7 +79,9 @@ class SQLiteRepository:
             CREATE TABLE IF NOT EXISTS push_queue (
                 id INTEGER PRIMARY KEY,
                 task_id INTEGER NOT NULL,
-                status TEXT NOT NULL CHECK (status IN ('pending', 'duplicate_check', 'pushed', 'failed')),
+                status TEXT NOT NULL CHECK (
+                    status IN ('pending', 'duplicate_check', 'pushed', 'failed')
+                ),
                 duplicate_candidate_odoo_id INTEGER,
                 FOREIGN KEY (task_id) REFERENCES tasks (id)
             )
