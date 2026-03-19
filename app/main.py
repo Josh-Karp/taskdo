@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.devops_config import DevopsConfig, DevopsConfigError, DevopsConfigLoader
-from app.odoo.client import OdooClient, OdooConnectionError
+from app.odoo.client import OdooAuthError, OdooClient, OdooConnectionError
 from app.odoo.sync import OdooSyncWorker
 from app.repository import SQLiteRepository
 from app.scheduler import AppScheduler
@@ -68,6 +68,8 @@ def connection_test(request: Request) -> dict:
     client: OdooClient = request.app.state.odoo_client
     try:
         uid = client.authenticate()
+    except OdooAuthError as exc:
+        return {"status": "error", "message": str(exc)}
     except OdooConnectionError as exc:
         return {"status": "error", "message": f"{exc}"}
     except DevopsConfigError as exc:

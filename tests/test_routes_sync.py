@@ -2,7 +2,7 @@ from unittest.mock import Mock
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.odoo.client import OdooConnectionError
+from app.odoo.client import OdooAuthError, OdooConnectionError
 
 
 def test_post_sync_calls_worker() -> None:
@@ -60,3 +60,18 @@ def test_connection_test_failure() -> None:
     body = response.json()
     assert body["status"] == "error"
     assert "Connection refused" in body["message"]
+
+
+def test_connection_test_auth_failure() -> None:
+    with TestClient(app) as client:
+        mock_client = Mock()
+        mock_client.authenticate.side_effect = OdooAuthError("Authentication failed")
+        mock_client.url = "https://your.odoo.instance"
+        client.app.state.odoo_client = mock_client
+
+        response = client.get("/settings/connection-test")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "error"
+    assert "Authentication failed" in body["message"]
