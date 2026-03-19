@@ -2,15 +2,21 @@
 
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.devops_config import DevopsConfig, DevopsConfigError, DevopsConfigLoader
+from app.odoo.client import OdooClient, OdooConnectionError
+from app.odoo.sync import OdooSyncWorker
 from app.repository import SQLiteRepository
+from app.scheduler import AppScheduler
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -18,7 +24,13 @@ async def lifespan(app: FastAPI):
     app.state.repository = SQLiteRepository("/data/db.sqlite")
     repository: SQLiteRepository = app.state.repository
     repository.initialize_schema()
-    scheduler = BackgroundScheduler()
+    client = OdooClient()
+    app.state.odoo_client = client
+    config = _load_devops_config(client)
+    app.state.devops_config = config
+    app.state.sync_worker = OdooSyncWorker(repository=repository, client=client, config=config)
+    scheduler = AppScheduler()
+    scheduler.register_sync_job(app.state.sync_worker.run)
     app.state.scheduler = scheduler
     scheduler.start()
     try:
@@ -38,6 +50,34 @@ def health(request: Request) -> dict[str, str]:
     repository: SQLiteRepository = request.app.state.repository
     repository.is_reachable()
     return {"status": "ok", "database": "reachable"}
+
+
+@app.post("/sync")
+def sync(request: Request) -> dict:
+    worker: OdooSyncWorker = request.app.state.sync_worker
+    try:
+        result = worker.run()
+    except OdooConnectionError as exc:
+        logger.error("Sync connection failure: %s", exc)
+        return {"status": "partial", "synced": {}}
+    return result
+
+
+@app.get("/settings/connection-test")
+def connection_test(request: Request) -> dict:
+    client: OdooClient = request.app.state.odoo_client
+    try:
+        uid = client.authenticate()
+    except OdooConnectionError as exc:
+        return {"status": "error", "message": f"{exc}"}
+    except DevopsConfigError as exc:
+        return {"status": "error", "message": str(exc)}
+    return {"status": "ok", "odoo_url": client.url, "uid": uid}
+
+
+def _load_devops_config(client: OdooClient) -> DevopsConfig:
+    config_loader = DevopsConfigLoader(client=client)
+    return config_loader.load()
 
 
 frontend_dist_candidates = [

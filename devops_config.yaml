@@ -1,12 +1,17 @@
-# Odoo model used for development operations review records.
-# Replace this placeholder with the model name available in your Odoo instance.
-model: x_devops_review
-
-# Field mapping used to read review metadata from Odoo.
-# Each value should be set to the exact field technical name returned by fields_get().
+# Fill in the actual model name and field names from your Odoo instance.
+# Run: python -c "from app.devops_config import DevopsConfigLoader; DevopsConfigLoader().load()"
+# to validate this file against your live Odoo instance.
+model: devops.review
+filters:
+  # Field that maps to the authenticated user
+  assigned_user_field: user_id
+  # Field that indicates review state
+  status_field: state
+  # Value of status_field meaning "needs review"
+  pending_review_value: pending
 fields:
-  id: x_id
-  title: x_title
-  branch_name: x_branch_name
-  repo_url: x_repo_url
-  state: x_state
+  # Field containing the git branch name
+  branch_field: branch_name
+  # Field containing a per-record repo URL (optional)
+  repo_field: repository_url
+repo_url: https://bitbucket.org/yourorg/yourrepo.git
