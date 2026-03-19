@@ -93,6 +93,9 @@ class SQLiteRepository:
                 priority_approved INTEGER NOT NULL DEFAULT 0
             )
             """,
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_odoo_id ON tasks(odoo_id)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_odoo_id ON projects(odoo_id)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_odoo_id ON reviews(odoo_id)",
         ]
         with self._connection:
             for statement in statements:
