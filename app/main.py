@@ -71,7 +71,7 @@ def connection_test(request: Request) -> dict:
     except OdooAuthError as exc:
         return {"status": "error", "message": str(exc)}
     except OdooConnectionError as exc:
-        return {"status": "error", "message": f"{exc}"}
+        return {"status": "error", "message": str(exc)}
     except DevopsConfigError as exc:
         return {"status": "error", "message": str(exc)}
     return {"status": "ok", "odoo_url": client.url, "uid": uid}
